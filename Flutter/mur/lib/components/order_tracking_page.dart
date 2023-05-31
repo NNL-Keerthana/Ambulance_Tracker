@@ -7,6 +7,7 @@ import 'package:location/location.dart';
 
 import 'constants.dart';
 
+
 class OrderTrackingPage extends StatefulWidget {
   const OrderTrackingPage({Key? key}) : super(key: key);
 
@@ -21,6 +22,9 @@ class OrderTrackingPageState extends State<OrderTrackingPage> {
   static const LatLng sourceLocation = LatLng(12.9793, 77.6642);
   static const LatLng destination = LatLng(13.050239, 77.556513);
 
+  String sourceAddress = "Your current location";
+  String destinationAddress = "Select a destination";
+
   List<LatLng> polylineCoordinates = [];
   LocationData? currentLocation;
 
@@ -28,7 +32,15 @@ class OrderTrackingPageState extends State<OrderTrackingPage> {
   BitmapDescriptor destinationIcon = BitmapDescriptor.defaultMarker;
   BitmapDescriptor currentLocationIcon = BitmapDescriptor.defaultMarker;
 
-//system-images;android-27;google_apis_playstore;x86"
+  DateTime? startTime;
+  DateTime? endTime;
+
+  Duration calculateTimeDifference() {
+    if (startTime != null && endTime != null) {
+      return endTime!.difference(startTime!);
+    }
+    return Duration.zero;
+  }
 
   void getCurrentLocation() async {
     Location location = Location();
@@ -56,6 +68,11 @@ class OrderTrackingPageState extends State<OrderTrackingPage> {
             ),
           ),
         );
+
+        if (newLoc.latitude == destination.latitude &&
+          newLoc.longitude == destination.longitude) {
+        endTime = DateTime.now();
+        }
 
         setState(() {});
       },
@@ -112,8 +129,22 @@ class OrderTrackingPageState extends State<OrderTrackingPage> {
     getCurrentLocation();
     setCustomMarkerIcon();
     getPolyPoints();
+    startTime = DateTime.now();
     super.initState();
   }
+
+  void setSourceAddress(String address) {
+    setState(() {
+      sourceAddress = address;
+    });
+  }
+
+  void setDestinationAddress(String address) {
+    setState(() {
+      destinationAddress = address;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -124,16 +155,20 @@ class OrderTrackingPageState extends State<OrderTrackingPage> {
           style: TextStyle(color: Colors.black, fontSize: 16),
         ),
       ),
-      body: currentLocation == null
-          ? const Center(child: Text("Loading"))
-          : GoogleMap(
+      body: 
+      currentLocation == null ? const Center(child: Text("Loading"))
+          : Column(
+      children: [
+        Expanded(
+          child: 
+          GoogleMap(
               initialCameraPosition: CameraPosition(
                   target: LatLng(
                       currentLocation!.latitude!, currentLocation!.longitude!),
                   zoom: 13.5),
               polylines: {
                 Polyline(
-                  polylineId: PolylineId("route"),
+                  polylineId: const PolylineId("route"),
                   points: polylineCoordinates,
                   color: primaryColor,
                   width: 6,
@@ -147,12 +182,12 @@ class OrderTrackingPageState extends State<OrderTrackingPage> {
                       currentLocation!.latitude!, currentLocation!.longitude!),
                 ),
                 Marker(
-                  markerId: MarkerId("source"),
+                  markerId: const MarkerId("source"),
                   icon: sourceIcon,
                   position: sourceLocation,
                 ),
                 Marker(
-                  markerId: MarkerId("destination"),
+                  markerId: const MarkerId("destination"),
                   icon: destinationIcon,
                   position: destination,
                 ),
@@ -161,6 +196,33 @@ class OrderTrackingPageState extends State<OrderTrackingPage> {
                 _controller.complete(mapController);
               },
             ),
-    );
+           ), 
+            Container(
+          padding: const EdgeInsets.all(16),
+          color: Colors.white,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Time: ${calculateTimeDifference().inMinutes} minutes",
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Source: Your source address",
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Destination: Your destination address",
+                style: TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+  
   }
 }
